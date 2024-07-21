@@ -18,11 +18,15 @@ This Streamlit application allows users to upload an image and create an HTML pa
 ## Installation
 
 1. Clone this repository:
-git clone https://github.com/yourusername/GenAI-Usecases.git
-cd '<Choice of folder>'
+  ```git
+  git clone https://github.com/yourusername/GenAI-Usecases.git
+  cd <Choice of folder>
+  ```
 
 2. Install the required packages:
-pip install streamlit pillow boto3
+  ```python
+  pip install streamlit pillow boto3
+  ```
 
 ## Configuration
 
