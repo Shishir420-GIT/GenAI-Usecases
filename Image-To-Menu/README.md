@@ -20,7 +20,7 @@ This Streamlit application allows users to upload an image and create an HTML pa
 1. Clone this repository:
   ```git
   git clone https://github.com/yourusername/GenAI-Usecases.git
-  cd <Choice of folder>
+  cd Image-To-Menu
   ```
 
 2. Install the required packages:
@@ -44,7 +44,9 @@ This Streamlit application allows users to upload an image and create an HTML pa
 ## Usage
 
 1. Run the Streamlit app:
-streamlit run app.py
+   ```cmd
+    streamlit run image_to_menu_html.py
+   ```
 
 2. Open the provided URL in your web browser.
 

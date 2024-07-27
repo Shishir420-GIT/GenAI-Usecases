@@ -1,7 +1,6 @@
-import streamlit as st
-from PIL import Image
-import io
 import boto3
+from PIL import Image
+import streamlit as st
 from botocore.exceptions import ClientError
 
 # Set up AWS Bedrock client

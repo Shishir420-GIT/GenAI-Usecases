@@ -1,8 +1,8 @@
+import json
+import boto3
+import base64
 import streamlit as st
 from PIL import Image
-import json
-import base64
-import boto3
 from botocore.exceptions import ClientError
 
 def get_bedrock_client():
