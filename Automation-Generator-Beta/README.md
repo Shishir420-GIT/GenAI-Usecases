@@ -34,7 +34,7 @@ This application allows users to upload an SOP based pdf, which lets them create
 - Create a `.streamlit/secrets.toml` file in the project directory
 - Add your API key:
   ```toml
-  API_KEY = "your_access_key_id"
+  API_KEY = "your_api_key_id"
   ```
 - Do not commit this file to version control
 
