@@ -13,7 +13,7 @@ def extract_text_from_pdf(pdf_file):
         text += page.extract_text()
     return text
 
-# Function to generate summary using Gemini
+# Function to generate summary using Geminic
 def gemini_summarize(text, domain, extra_info):
     model = genai.GenerativeModel('gemini-pro')
     prompt = f"""
