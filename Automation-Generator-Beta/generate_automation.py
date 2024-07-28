@@ -54,7 +54,7 @@ def gemini_generate_block_diagram(summary, domain, extra_info="None"):
     return response.text
 
 # Function to generate script using Gemini
-def gemini_generate_script(summary, domain, extra_info):
+def gemini_generate_script(summary, domain, extra_info="None"):
     model = genai.GenerativeModel('gemini-pro')
     prompt = f"""
     Based on the following summary of a document in the {domain} domain,
@@ -71,7 +71,7 @@ def gemini_generate_script(summary, domain, extra_info):
     return response.text
 
 # Function to generate prerequisites using Gemini
-def gemini_generate_prerequisites(summary, domain, extra_info):
+def gemini_generate_prerequisites(summary, domain, extra_info="None"):
     model = genai.GenerativeModel('gemini-pro')
     prompt = f"""
     Based on the following summary of a document in the {domain} domain,
