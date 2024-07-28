@@ -1,9 +1,25 @@
-import PyPDF2
 import streamlit as st
+import PyPDF2
+import os
 import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 # Configure the Gemini API (you'll need to set up your API key)
-genai.configure(api_key=st.secrets["API_KEY"])
+try:
+    genai.configure(api_key=st.secrets["API_KEY"])
+except:
+    st.error("API_KEY is not set in the environment variables. Please set it and restart the application.")
+    st.stop()
+
+genai.configure(api_key=os.environ["API_KEY"])
+generation_config = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 64,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
 
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_file):
@@ -13,9 +29,35 @@ def extract_text_from_pdf(pdf_file):
         text += page.extract_text()
     return text
 
-# Function to generate summary using Geminic
+# Retry Function
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(5))
+def generate_with_retry(model, prompt):
+    return model.generate_content([prompt], safety_settings={
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+    })
+
+# Function to generate content using Gemini
+def gemini_generate_content(prompt, model_name="gemini-1.5-flash"):
+    model = genai.GenerativeModel(model_name=model_name, generation_config=generation_config)
+    try:
+        response = generate_with_retry(model, prompt)
+        
+        if not response.candidates:
+            st.warning("Response was blocked. Check safety ratings.")
+            for rating in response.prompt_feedback.safety_ratings:
+                st.write(f"{rating.category}: {rating.probability}")
+            return None
+        
+        return response.text
+    except Exception as e:
+        st.error(f"Error generating content: {str(e)}")
+        return None
+
+# Function to generate summary
 def gemini_summarize(text, domain, extra_info):
-    model = genai.GenerativeModel('gemini-pro')
     prompt = f"""
     Analyze the following text from a PDF document related to the {domain} domain. 
     Additional context: {extra_info}
@@ -32,12 +74,10 @@ def gemini_summarize(text, domain, extra_info):
 
     Please format the summary in a clear, structured manner.
     """
-    response = model.generate_content(prompt)
-    return response.text
+    return gemini_generate_content(prompt)
 
-# Function to generate block diagram using Gemini
-def gemini_generate_block_diagram(summary, domain, extra_info="None"):
-    model = genai.GenerativeModel('gemini-pro')
+# Function to generate block diagram
+def gemini_generate_block_diagram(summary, domain, extra_info):
     prompt = f"""
     Based on the following summary of a document in the {domain} domain,
     Create a block diagram of the automation script flow.
@@ -50,16 +90,15 @@ def gemini_generate_block_diagram(summary, domain, extra_info="None"):
     Please provide a textual representation of the block diagram,
     using ASCII characters or markdown formatting to illustrate the flow.
     """
-    response = model.generate_content(prompt)
-    return response.text
+    return gemini_generate_content(prompt)
 
-# Function to generate script using Gemini
-def gemini_generate_script(summary, domain, extra_info="None"):
-    model = genai.GenerativeModel('gemini-pro')
+# Function to generate script
+def gemini_generate_script(summary, domain, extra_info):
     prompt = f"""
     Based on the following summary of a document in the {domain} domain,
-    create a script to automate the described process.
-    Select the appropriate language based on the requirement from either Python or PowerShell.
+    create a completely safe to run script to automate the described process.
+    Select the appropriate language based on the requirement.
+    Make sure there is no dangerous content in your response.
     Additional context: {extra_info}
 
     Summary:
@@ -67,19 +106,17 @@ def gemini_generate_script(summary, domain, extra_info="None"):
 
     Please provide a detailed Python script with comments explaining each step of the automation process.
     """
-    response = model.generate_content(prompt)
-    return response.text
+    return gemini_generate_content(prompt)
 
-# Function to generate prerequisites using Gemini
-def gemini_generate_prerequisites(summary, domain, extra_info="None"):
-    model = genai.GenerativeModel('gemini-pro')
+# Function to generate prerequisites
+def gemini_generate_prerequisites(summary, domain, extra_info):
     prompt = f"""
     Based on the following summary of a document in the {domain} domain,
     List the prerequisites needed for the automation to run, breaking it down into the following sections:
     1. Hardware Requirement: List which kind of server or machines would be required.
-    2. Software requirement: List which packages or libraries or softwares would be require.
-    3. Access Requirement: List out different kind of access a person would require.
-    4. Additional information: Based on the above steps, conclude and list any additional requiement left.
+    2. Software requirement: List which packages or libraries or software would be required.
+    3. Access Requirement: List out different kinds of access a person would require.
+    4. Additional information: Based on the above steps, conclude and list any additional requirements left.
     Additional context: {extra_info}
 
     Summary:
@@ -87,11 +124,10 @@ def gemini_generate_prerequisites(summary, domain, extra_info="None"):
 
     Please provide a comprehensive list of prerequisites, including software, libraries, and any specific configurations needed.
     """
-    response = model.generate_content(prompt)
-    return response.text
+    return gemini_generate_content(prompt)
 
-if __name__ == '__main__':
-    # Streamlit UI
+# Main Streamlit UI
+def main():
     st.title("Automation Generator")
 
     # Input components
@@ -101,45 +137,52 @@ if __name__ == '__main__':
 
     if pdf_file is not None:
         pdf_text = extract_text_from_pdf(pdf_file)
-        st.subheader("PDF Summary")
         
+        # Generate and display summary
         with st.spinner("Generating summary..."):
             summary = gemini_summarize(pdf_text, domain, extra_info)
         
-        summary_container = st.empty()
-        summary_container.text_area("Summary", summary, height=200)
+        if summary:
+            st.subheader("PDF Summary")
+            st.markdown(summary)
+        else:
+            st.warning("Failed to generate summary. Please try again or adjust your input.")
 
-        if st.button("Generate Automation"):
-            with st.spinner("Generating automation..."):
+        # Function to generate all components
+        def generate_all_components():
+            with st.spinner("Generating automation components..."):
                 # Generate block diagram
                 block_diagram = gemini_generate_block_diagram(summary, domain, extra_info)
-                st.subheader("Block Diagram of Script Flow")
-                block_diagram_container = st.empty()
-                block_diagram_container.text_area("Block Diagram", block_diagram, height=200)
+                if block_diagram:
+                    st.subheader("Block Diagram of Script Flow")
+                    st.markdown(f"```\n{block_diagram}\n```")
+                else:
+                    st.warning("Failed to generate block diagram. Please try again or adjust your input.")
 
                 # Generate script
                 script = gemini_generate_script(summary, domain, extra_info)
-                st.subheader("Automation Script")
-                script_container = st.empty()
-                script_editor = script_container.text_area("Script", script, height=400)
-                st.download_button("Download Script", script_editor, file_name="automation_script.py")
+                if script:
+                    st.subheader("Automation Script")
+                    st.code(script, language="python")
+                    st.download_button("Download Script", script, file_name="automation_script.py")
+                else:
+                    st.warning("Failed to generate script. Please try again or adjust your input.")
 
                 # Generate prerequisites
                 prerequisites = gemini_generate_prerequisites(summary, domain, extra_info)
-                st.subheader("Prerequisites")
-                prereq_container = st.empty()
-                prereq_container.text_area("Prerequisites", prerequisites, height=200)
+                if prerequisites:
+                    st.subheader("Prerequisites")
+                    st.markdown(prerequisites)
+                else:
+                    st.warning("Failed to generate prerequisites. Please try again or adjust your input.")
 
+        # Button to generate automation
+        if st.button("Generate Automation"):
+            generate_all_components()
+
+        # Button to regenerate all components
         if st.button("Regenerate All"):
-            with st.spinner("Regenerating all components..."):
-                summary = gemini_summarize(pdf_text, domain, extra_info)
-                summary_container.text_area("Summary", summary, height=200)
-                
-                block_diagram = gemini_generate_block_diagram(summary, domain, extra_info)
-                block_diagram_container.text_area("Block Diagram", block_diagram, height=200)
-                
-                script = gemini_generate_script(summary, domain, extra_info)
-                script_container.text_area("Script", script, height=400)
-                
-                prerequisites = gemini_generate_prerequisites(summary, domain, extra_info)
-                prereq_container.text_area("Prerequisites", prerequisites, height=200)
+            generate_all_components()
+
+if __name__ == '__main__':
+    main()

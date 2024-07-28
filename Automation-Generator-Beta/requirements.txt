@@ -1,3 +1,4 @@
 PyPDF2
+tenacity
 streamlit
 google.generativeai
