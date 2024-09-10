@@ -5,3 +5,4 @@ Stacking my generative AI based applications here, feel free to contribute or us
 - [1. Caption Generator](https://github.com/Shishir420-GIT/GenAI-Usecases/tree/main/Caption-Generator)
 - [2. Image to Menu HTML Converter](https://github.com/Shishir420-GIT/GenAI-Usecases/tree/main/Image-To-Menu)
 - [3. Automation Generator Beta](https://github.com/Shishir420-GIT/GenAI-Usecases/tree/main/Automation-Generator-Beta)
+- [4. Image Summarizer](https://github.com/Shishir420-GIT/GenAI-Usecases/tree/main/Image-Summarizer)
