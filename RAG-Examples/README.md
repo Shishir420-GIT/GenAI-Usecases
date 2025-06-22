@@ -1,4 +1,4 @@
-# Automation Generator Beta
+# RAG-Examples
 
 This repository provides two tools for Retrieval-Augmented Generation (RAG):
 
