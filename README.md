@@ -7,3 +7,4 @@ Stacking my generative AI based applications here, feel free to contribute or us
 - [3. Automation Generator Beta](https://github.com/Shishir420-GIT/GenAI-Usecases/tree/main/Automation-Generator-Beta)
 - [4. Image Summarizer](https://github.com/Shishir420-GIT/GenAI-Usecases/tree/main/Image-Summarizer)
 - [5. Youtube Summarizer](https://github.com/Shishir420-GIT/GenAI-Usecases/tree/main/Youtube-Summarizer)
+- [6. RAG-Examples](https://github.com/Shishir420-GIT/GenAI-Usecases/tree/main/RAG-Examples)
